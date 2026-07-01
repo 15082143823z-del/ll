@@ -929,14 +929,28 @@
         function revealEasterEgg() {
             easterRevealed = true;
             eeHint.style.opacity = '0';
-            // 🥚 蛋裂开动画
+
+            // 蛋裂开动画
             showEggCrack(() => {
-                // 清除 onMove 设置的内联样式
-                easter.style.transform = '';
-                easter.style.opacity = '';
+                // 1. 先让当前卡片淡出
+                const card = cards[total - 1];
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                card.style.opacity = '0.15';
+                card.style.transform = 'scale(0.95)';
+
+                // 2. 冻结彩蛋当前位置，准备CSS过渡
+                const cs = getComputedStyle(easter);
+                easter.style.transform = cs.transform;
+                easter.style.opacity = cs.opacity;
                 easter.classList.remove('peeking');
-                easter.classList.add('revealed');
-                spawnEESparkles();
+
+                // 3. 下一帧触发CSS平滑过渡到revealed状态
+                requestAnimationFrame(() => {
+                    easter.classList.add('revealed');
+                    easter.style.transform = '';
+                    easter.style.opacity = '';
+                    spawnEESparkles();
+                });
             });
         }
 
@@ -976,8 +990,10 @@
             easter.style.transform = 'translateY(100%)';
             easter.style.opacity = '0';
             eeHint.classList.remove('show');
-            cards[total - 1].style.transform = '';
-            cards[total - 1].style.opacity = '';
+            const card = cards[total - 1];
+            card.style.transition = '';
+            card.style.transform = '';
+            card.style.opacity = '';
         }
 
         // 彩蛋背景火花
