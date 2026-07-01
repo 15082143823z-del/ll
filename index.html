@@ -764,6 +764,9 @@
         // --- Reveal Easter Egg ---
         function revealEasterEgg() {
             easterRevealed = true;
+            // 清除 onMove 设置的内联样式，让 CSS class 生效
+            easter.style.transform = '';
+            easter.style.opacity = '';
             easter.classList.remove('peeking');
             easter.classList.add('revealed');
             eeHint.style.opacity = '0';
@@ -988,10 +991,16 @@
                 musicStarted = true;
             }).catch(() => {});
         }
-        // 首次用户交互时启动音乐
-        const startEvents = ['touchstart', 'click', 'keydown', 'scroll'];
+        // 用户交互时启动音乐（持续重试直到成功）
+        const startEvents = ['touchstart', 'click'];
         startEvents.forEach(evt => {
-            document.addEventListener(evt, startMusic, { once: true });
+            document.addEventListener(evt, startMusic);
+        });
+        // 成功播放后移除监听
+        audio.addEventListener('play', () => {
+            startEvents.forEach(evt => {
+                document.removeEventListener(evt, startMusic);
+            });
         });
 
         console.log('🌸 林丽 —— 向上滑动，让每一页如星散落');
