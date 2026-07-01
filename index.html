@@ -263,7 +263,7 @@
             opacity: 0;
             transition: opacity 0.5s;
         }
-        .ee-hint.show { opacity: 1; }
+        .ee-hint.show { opacity: 1; pointer-events: auto; cursor: pointer; }
         .ee-hint .ee-arr {
             display: inline-block;
             animation: eeArrDown 1.5s ease-in-out infinite;
@@ -703,11 +703,18 @@
         const resetBtn = document.getElementById('resetBtn');
         const easter   = document.getElementById('easterEgg');
         const eeHint   = document.getElementById('eeHint');
+        // 点击提示也能触发彩蛋
+        eeHint.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (curIdx === total - 1 && !easterRevealed) {
+                revealEasterEgg();
+            }
+        });
         const canvas   = document.getElementById('particleCanvas');
         const ctx      = canvas.getContext('2d');
         const audio    = document.getElementById('bgAudio');
         let easterRevealed = false;
-        const EE_THRESH   = 80; // 下拉彩蛋触发阈值（降低，更容易触发）
+        const EE_THRESH   = 50; // 下拉彩蛋触发阈值
 
         // ---- Canvas Size ----
         function resizeCanvas() {
@@ -854,7 +861,7 @@
 
             // 最后一页：允许下拉（彩蛋），带阻滞感
             if (curIdx === total - 1 && dy > 0 && !easterRevealed) {
-                const resistance = dy * 0.18; // 强阻滞，拖很远才动一点点
+                const resistance = dy * 0.35; // 阻滞感，但给足够视觉反馈
                 const card = cards[curIdx];
                 card.style.transform = `translateY(${resistance}px)`;
                 card.style.opacity   = Math.max(0.3, 1 - resistance / 200);
