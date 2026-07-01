@@ -504,6 +504,49 @@
             color: rgba(255,228,236,0.55);
             letter-spacing: 3px;
         }
+        /* ====== 蛋裂开动画 ====== */
+        .egg-crack-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 999;
+            pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .egg-shell {
+            font-size: 120px;
+            animation: eggShake 0.15s ease 3, eggCrack 0.6s 0.45s ease-out forwards;
+            transform-origin: center;
+        }
+        @keyframes eggShake {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        @keyframes eggCrack {
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            30% { transform: scale(1.1); opacity: 1; filter: brightness(1.3); }
+            100% { transform: scale(1.5); opacity: 0; filter: brightness(2) blur(10px); }
+        }
+        .egg-crack-line {
+            position: absolute;
+            font-size: 130px;
+            opacity: 0;
+            animation: crackAppear 0.2s 0.5s ease-out forwards;
+        }
+        @keyframes crackAppear {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .egg-pieces {
+            position: absolute;
+            font-size: 30px;
+            opacity: 0;
+            animation: pieceFly var(--dur) 0.7s ease-out forwards;
+        }
+        @keyframes pieceFly {
+            0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); }
+        }
+
         .shake {
             animation: shakeX 0.4s ease;
         }
@@ -794,7 +837,8 @@
         let startY = 0, startX = 0, activeTouch = false;
 
         function onDown(e) {
-            if (curIdx >= total - 1) return;
+            // 最后一页允许下拉彩蛋，但禁止上滑
+            if (curIdx >= total - 1 && easterRevealed) return;
             const p = e.touches ? e.touches[0] : e;
             startX = p.clientX;
             startY = p.clientY;
@@ -877,14 +921,46 @@
         // --- Reveal Easter Egg ---
         function revealEasterEgg() {
             easterRevealed = true;
-            // 清除 onMove 设置的内联样式，让 CSS class 生效
-            easter.style.transform = '';
-            easter.style.opacity = '';
-            easter.classList.remove('peeking');
-            easter.classList.add('revealed');
             eeHint.style.opacity = '0';
-            // 生成彩蛋火花
-            spawnEESparkles();
+            // 🥚 蛋裂开动画
+            showEggCrack(() => {
+                // 清除 onMove 设置的内联样式
+                easter.style.transform = '';
+                easter.style.opacity = '';
+                easter.classList.remove('peeking');
+                easter.classList.add('revealed');
+                spawnEESparkles();
+            });
+        }
+
+        // --- 蛋裂开特效 ---
+        function showEggCrack(callback) {
+            const overlay = document.createElement('div');
+            overlay.className = 'egg-crack-overlay';
+            overlay.style.background = 'rgba(10,10,20,0.85)';
+            overlay.style.backdropFilter = 'blur(4px)';
+            overlay.style.webkitBackdropFilter = 'blur(4px)';
+            overlay.innerHTML = '<span class="egg-shell">🥚</span><span class="egg-crack-line">💥</span>';
+            document.body.appendChild(overlay);
+
+            // 飞散的蛋壳碎片
+            const pieces = ['🧩','✨','💫','⭐','🌟','💛','🫧'];
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('span');
+                p.className = 'egg-pieces';
+                p.textContent = pieces[Math.floor(Math.random() * pieces.length)];
+                p.style.setProperty('--dx', (Math.random()*200-100) + 'px');
+                p.style.setProperty('--dy', (Math.random()*200-100) + 'px');
+                p.style.setProperty('--rot', (Math.random()*720-360) + 'deg');
+                p.style.setProperty('--dur', (0.5+Math.random()*0.8) + 's');
+                overlay.appendChild(p);
+            }
+
+            // 1.2秒后移除overlay，执行callback
+            setTimeout(() => {
+                overlay.remove();
+                if (callback) callback();
+            }, 1200);
         }
 
         function hideEasterEgg() {
@@ -1112,35 +1188,55 @@
         const btn     = document.getElementById('pwBtn');
         const errorEl = document.getElementById('pwError');
 
-        // 密码：你的名字拼音（base64编码，防一眼看到）
-        // 修改密码：在浏览器控制台输入 btoa("你的新密码") 得到编码后替换下面
-        const PASS_HASH = '5bCP5aSp5omN5aSc6LCI';
+        // 密码 SHA-256 哈希（防逆向）
+        // 修改密码：在浏览器控制台执行 crypto.subtle.digest("SHA-256", new TextEncoder().encode("新密码")).then(h => console.log(Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("")))
+        const PASS_HASH = 'a8a3a55f2b3c4bf6d582d613328ceb3a1f11cb33e102543b6902373e89fe2b77';
 
-        function checkPassword() {
-            const val = input.value.trim();
-            if (!val) {
-                showError('请输入密码');
+        // 错误计数器（防暴力破解）
+        let failCount = 0;
+        let lockUntil = 0;
+
+        async function checkPassword() {
+            const now = Date.now();
+            if (now < lockUntil) {
+                const sec = Math.ceil((lockUntil - now) / 1000);
+                showError('请等待 ' + sec + ' 秒后再试');
                 return;
             }
+
+            const val = input.value.trim();
+            if (!val) { showError('请输入密码'); return; }
+
             try {
-                if (btoa(unescape(encodeURIComponent(val))) === PASS_HASH) {
-                    // 正确！
+                const encoder = new TextEncoder();
+                const data = encoder.encode(val);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                if (hashHex === PASS_HASH) {
+                    failCount = 0;
                     gate.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
                     gate.style.opacity = '0';
                     gate.style.transform = 'scale(1.05)';
                     setTimeout(() => {
                         gate.style.display = 'none';
                         main.style.display = '';
-                        // 触发音乐
                         if (window._triggerMusic) window._triggerMusic();
                     }, 600);
                 } else {
-                    showError('密码不对，再试试～');
+                    failCount++;
                     input.classList.add('shake');
                     setTimeout(() => input.classList.remove('shake'), 500);
+                    if (failCount >= 5) {
+                        lockUntil = now + 30000;
+                        showError('尝试次数过多，请 30 秒后再试');
+                    } else {
+                        showError('密码不对，已尝试 ' + failCount + '/5 次');
+                    }
                 }
             } catch(e) {
-                showError('密码不对，再试试～');
+                showError('出错了，请刷新页面重试');
             }
         }
 
