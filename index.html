@@ -1190,7 +1190,7 @@
 
         // 密码 SHA-256 哈希（防逆向）
         // 修改密码：在浏览器控制台执行 crypto.subtle.digest("SHA-256", new TextEncoder().encode("新密码")).then(h => console.log(Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("")))
-        const PASS_HASH = 'a8a3a55f2b3c4bf6d582d613328ceb3a1f11cb33e102543b6902373e89fe2b77';
+        const PASS_HASH = '60ff89e1286f532067a666bbd10a222c09284c01de1984c2449bfb634a413f55';
 
         // 错误计数器（防暴力破解）
         let failCount = 0;
