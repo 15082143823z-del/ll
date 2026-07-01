@@ -1226,6 +1226,7 @@
                     }, 600);
                 } else {
                     failCount++;
+                    input.value = '';
                     input.classList.add('shake');
                     setTimeout(() => input.classList.remove('shake'), 500);
                     if (failCount >= 5) {
