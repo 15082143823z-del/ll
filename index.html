@@ -932,25 +932,33 @@
 
             // 蛋裂开动画
             showEggCrack(() => {
-                // 1. 先让当前卡片淡出
+                // 卡片淡出
                 const card = cards[total - 1];
                 card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
                 card.style.opacity = '0.15';
                 card.style.transform = 'scale(0.95)';
 
-                // 2. 冻结彩蛋当前位置，准备CSS过渡
-                const cs = getComputedStyle(easter);
-                easter.style.transform = cs.transform;
-                easter.style.opacity = cs.opacity;
+                // 彩蛋：用 animate() API 从当前位置平滑滑入，避免CSS过渡跳闪
                 easter.classList.remove('peeking');
-
-                // 3. 下一帧触发CSS平滑过渡到revealed状态
-                requestAnimationFrame(() => {
-                    easter.classList.add('revealed');
+                const curY = easter.getBoundingClientRect().top;
+                const targetY = 0;
+                easter.style.transform = '';
+                easter.style.opacity = '1';
+                easter.classList.add('revealed');
+                easter.style.transition = 'none';
+                easter.animate([
+                    { transform: 'translateY(' + curY + 'px)', opacity: 0.3 },
+                    { transform: 'translateY(0px)', opacity: 1 }
+                ], {
+                    duration: 500,
+                    easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+                    fill: 'forwards'
+                }).onfinish = () => {
                     easter.style.transform = '';
                     easter.style.opacity = '';
-                    spawnEESparkles();
-                });
+                    easter.style.transition = '';
+                };
+                spawnEESparkles();
             });
         }
 
@@ -986,14 +994,13 @@
 
         function hideEasterEgg() {
             easterRevealed = false;
+            // 停止所有动画
+            easter.getAnimations().forEach(a => a.cancel());
             easter.classList.remove('revealed', 'peeking');
-            easter.style.transform = 'translateY(100%)';
-            easter.style.opacity = '0';
+            easter.style.cssText = 'transform: translateY(100%); opacity: 0; transition: none;';
             eeHint.classList.remove('show');
             const card = cards[total - 1];
-            card.style.transition = '';
-            card.style.transform = '';
-            card.style.opacity = '';
+            card.style.cssText = '';
         }
 
         // 彩蛋背景火花
