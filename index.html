@@ -8,8 +8,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%; height: 100%; height: 100dvh;
-            overflow: hidden;
+            width: 100%; min-height: 100%; min-height: 100dvh;
+            overflow-x: hidden; overflow-y: auto;
             font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun", serif;
             background: #0a0505;
             color: #c8b89a;
@@ -28,10 +28,10 @@
         /* Main content */
         .main {
             position: relative; z-index: 2;
-            width: 100%; height: 100%;
+            width: 100%; min-height: 100vh; min-height: 100dvh;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            padding: 40px 28px;
+            padding: 40px 28px 80px;
             text-align: center;
         }
 
@@ -106,25 +106,57 @@
         .chars {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px; width: 100%; max-width: 320px;
+            gap: 10px; width: 100%; max-width: 320px;
+            margin-bottom: 20px;
         }
         .char-card {
             background: rgba(20, 10, 5, 0.6);
             border: 1px solid rgba(100, 60, 20, 0.3);
             border-radius: 8px;
-            padding: 14px 10px;
+            padding: 12px 8px;
             text-align: center;
             backdrop-filter: blur(4px);
         }
-        .char-icon { font-size: 28px; margin-bottom: 4px; }
+        .char-icon { font-size: 24px; margin-bottom: 2px; }
         .char-name {
-            font-size: 14px; font-weight: 700;
+            font-size: 13px; font-weight: 700;
             letter-spacing: 3px;
             color: #d4a843;
         }
         .char-desc {
-            font-size: 11px; color: rgba(180,140,100,0.5);
-            letter-spacing: 2px; margin-top: 2px;
+            font-size: 10px; color: rgba(180,140,100,0.5);
+            letter-spacing: 1px; margin-top: 2px;
+        }
+
+        /* Gallery */
+        .gallery {
+            width: 100%; max-width: 340px;
+            display: flex; gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding: 0 8px 8px;
+            scrollbar-width: none;
+        }
+        .gallery::-webkit-scrollbar { display: none; }
+        .gallery-item {
+            flex: 0 0 70vw; max-width: 280px;
+            scroll-snap-align: center;
+            border-radius: 12px; overflow: hidden;
+            border: 2px solid rgba(180, 120, 60, 0.2);
+            aspect-ratio: 9/16;
+            position: relative;
+        }
+        .gallery-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .gallery-label {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(10,5,5,0.85));
+            color: #d4a843; font-size: 12px;
+            padding: 24px 12px 10px;
+            letter-spacing: 3px; text-align: center;
         }
 
         /* Bottom */
@@ -191,6 +223,30 @@
                 <div class="char-icon">🏹</div>
                 <div class="char-name">诺诺</div>
                 <div class="char-desc">陈墨瞳·红发</div>
+            </div>
+        </div>
+
+        <!-- 热门图片 -->
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="https://haowallpaper.com/link/common/file/previewFileImg/16457932973198720"
+                     alt="路明非 & 楚子航" loading="lazy">
+                <div class="gallery-label">路明非 & 楚子航</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://haowallpaper.com/link/common/file/previewFileImg/16457968667774336"
+                     alt="龙族·插图" loading="lazy">
+                <div class="gallery-label">龙族·经典场景</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://haowallpaper.com/link/common/file/previewFileImg/18081895687179648"
+                     alt="夏弥 & 楚子航" loading="lazy">
+                <div class="gallery-label">夏弥 & 楚子航</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://haowallpaper.com/link/common/file/previewFileImg/18770913792937344"
+                     alt="路明非" loading="lazy">
+                <div class="gallery-label">路明非</div>
             </div>
         </div>
     </div>
