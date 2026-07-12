@@ -24,6 +24,7 @@
         }
         #emberCanvas { z-index: 1; }
         #dragonCanvas { z-index: 0; }
+        #magicCanvas { z-index: 3; pointer-events: none; }
 
         /* Main content */
         .main {
@@ -182,6 +183,7 @@
 
     <canvas id="emberCanvas"></canvas>
     <canvas id="dragonCanvas"></canvas>
+    <canvas id="magicCanvas"></canvas>
 
     <div class="main">
         <div class="title-wrap">
@@ -356,9 +358,235 @@
         function animate() {
             drawEmbers();
             drawDragon();
+            drawMagic();
             requestAnimationFrame(animate);
         }
         animate();
+
+        // ============ 魔幻交互系统 ============
+        const magicCanvas = document.getElementById('magicCanvas');
+        const mctx = magicCanvas.getContext('2d');
+        let magicFX = [];        // active effects
+        let energyTrail = [];    // drag trail particles
+        let isDragging = false;
+        let pressTimer = null;
+        let lastPos = { x: 0, y: 0 };
+
+        function resizeMagic() {
+            magicCanvas.width = window.innerWidth;
+            magicCanvas.height = window.innerHeight;
+        }
+        resizeMagic();
+        window.addEventListener('resize', resizeMagic);
+
+        // === 拖拽能量轨迹 ===
+        function addTrailPoint(x, y) {
+            energyTrail.push({
+                x, y, life: 1, size: 2 + Math.random() * 4,
+                hue: 30 + Math.random() * 20
+            });
+            if (energyTrail.length > 60) energyTrail.shift();
+        }
+
+        // === 点击：召唤魔法阵 ===
+        function summonCircle(x, y) {
+            const runes = ['竜','炎','剣','契','龍','暗','焔','魂'];
+            for (let ring = 0; ring < 3; ring++) {
+                const count = 8 + ring * 6;
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 / count) * i;
+                    const radius = 30 + ring * 25 + Math.random() * 10;
+                    magicFX.push({
+                        type: 'particle',
+                        x, y, angle, radius,
+                        life: 1, speed: 1 + Math.random() * 2,
+                        size: 2 + Math.random() * 3,
+                        hue: ring === 0 ? 35 : ring === 1 ? 15 : 45,
+                        rune: i % 3 === 0 && ring === 2 ? runes[i % runes.length] : null
+                    });
+                }
+            }
+            // 中心符文
+            magicFX.push({
+                type: 'centerRune',
+                x, y, life: 1.5, size: 40,
+                text: runes[Math.floor(Math.random() * runes.length)]
+            });
+        }
+
+        // === 长按：龙瞳 ===
+        function openDragonEye(x, y) {
+            magicFX.push({
+                type: 'dragonEye',
+                x, y, life: 2, radius: 0, maxRadius: 60
+            });
+        }
+
+        // === 绘制魔幻特效 ===
+        function drawMagic() {
+            mctx.clearRect(0, 0, magicCanvas.width, magicCanvas.height);
+
+            // 能量轨迹
+            if (energyTrail.length > 1) {
+                for (let i = 1; i < energyTrail.length; i++) {
+                    const p = energyTrail[i];
+                    const pp = energyTrail[i - 1];
+                    p.life -= 0.03;
+                    if (p.life <= 0) continue;
+                    const alpha = p.life * 0.6;
+                    mctx.strokeStyle = `hsla(${p.hue}, 100%, 60%, ${alpha})`;
+                    mctx.lineWidth = p.size * p.life;
+                    mctx.lineCap = 'round';
+                    mctx.shadowColor = `hsla(${p.hue}, 100%, 50%, ${alpha})`;
+                    mctx.shadowBlur = 10;
+                    mctx.beginPath();
+                    mctx.moveTo(pp.x, pp.y);
+                    mctx.lineTo(p.x, p.y);
+                    mctx.stroke();
+                    mctx.shadowBlur = 0;
+                }
+                energyTrail = energyTrail.filter(p => p.life > 0);
+            }
+
+            // 魔法特效
+            for (let i = magicFX.length - 1; i >= 0; i--) {
+                const fx = magicFX[i];
+                fx.life -= 0.02;
+                if (fx.life <= 0) { magicFX.splice(i, 1); continue; }
+
+                const alpha = Math.min(fx.life, 1);
+
+                if (fx.type === 'particle') {
+                    const px = fx.x + Math.cos(fx.angle) * fx.radius * (1 - fx.life);
+                    const py = fx.y + Math.sin(fx.angle) * fx.radius * (1 - fx.life);
+                    fx.radius += fx.speed * 0.5;
+
+                    mctx.fillStyle = `hsla(${fx.hue}, 100%, 60%, ${alpha})`;
+                    mctx.shadowColor = `hsla(${fx.hue}, 100%, 50%, ${alpha})`;
+                    mctx.shadowBlur = 8;
+                    mctx.beginPath();
+                    mctx.arc(px, py, fx.size * alpha, 0, Math.PI * 2);
+                    mctx.fill();
+                    mctx.shadowBlur = 0;
+
+                    if (fx.rune) {
+                        mctx.fillStyle = `rgba(212, 168, 67, ${alpha})`;
+                        mctx.font = `${12 * alpha}px serif`;
+                        mctx.fillText(fx.rune, px - 6, py + 4);
+                    }
+                }
+                else if (fx.type === 'centerRune') {
+                    const s = fx.size * alpha;
+                    fx.size += 1;
+                    mctx.fillStyle = `rgba(212, 168, 67, ${alpha * 0.8})`;
+                    mctx.font = `bold ${s}px "STKaiti", "KaiTi", serif`;
+                    mctx.shadowColor = `rgba(200, 40, 20, ${alpha * 0.5})`;
+                    mctx.shadowBlur = 20;
+                    mctx.textAlign = 'center';
+                    mctx.fillText(fx.text, fx.x, fx.y + s / 3);
+                    mctx.shadowBlur = 0;
+
+                    // 光环
+                    mctx.strokeStyle = `rgba(212, 168, 67, ${alpha * 0.4})`;
+                    mctx.lineWidth = 2;
+                    mctx.beginPath();
+                    mctx.arc(fx.x, fx.y, s * 1.2, 0, Math.PI * 2);
+                    mctx.stroke();
+                }
+                else if (fx.type === 'dragonEye') {
+                    fx.radius += (fx.maxRadius - fx.radius) * 0.1;
+                    const r = fx.radius;
+                    const pulse = 0.7 + Math.sin(Date.now() * 0.005) * 0.3;
+
+                    // 瞳孔
+                    const eyeGrad = mctx.createRadialGradient(fx.x, fx.y, r * 0.1, fx.x, fx.y, r);
+                    eyeGrad.addColorStop(0, `rgba(0,0,0,${alpha})`);
+                    eyeGrad.addColorStop(0.15, `rgba(200,40,20,${alpha * pulse})`);
+                    eyeGrad.addColorStop(0.3, `rgba(180,30,10,${alpha * 0.8})`);
+                    eyeGrad.addColorStop(0.6, `rgba(80,10,0,${alpha * 0.4})`);
+                    eyeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    mctx.fillStyle = eyeGrad;
+                    mctx.beginPath();
+                    mctx.arc(fx.x, fx.y, r, 0, Math.PI * 2);
+                    mctx.fill();
+
+                    // 竖直瞳孔线
+                    mctx.strokeStyle = `rgba(0,0,0,${alpha * 0.9})`;
+                    mctx.lineWidth = r * 0.08;
+                    mctx.beginPath();
+                    mctx.moveTo(fx.x, fx.y - r * 0.35);
+                    mctx.lineTo(fx.x, fx.y + r * 0.35);
+                    mctx.stroke();
+                }
+            }
+        }
+
+        // === 事件监听（绑定到document，不拦截滚动） ===
+        function getPos(e) {
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX, y: t.clientY };
+        }
+        function isInteractiveTarget(e) {
+            const el = e.target;
+            return el.closest('.gallery') || el.closest('.char-card') || el.tagName === 'A' || el.tagName === 'IMG';
+        }
+
+        document.addEventListener('touchstart', (e) => {
+            if (isInteractiveTarget(e)) return;
+            const p = getPos(e);
+            lastPos = p;
+            isDragging = false;
+            energyTrail = [];
+            pressTimer = setTimeout(() => {
+                isDragging = true;
+                openDragonEye(p.x, p.y);
+            }, 500);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isInteractiveTarget(e) || !isDragging) return;
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            const p = getPos(e);
+            addTrailPoint(p.x, p.y);
+            lastPos = p;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+                if (!isDragging) summonCircle(lastPos.x, lastPos.y);
+            }
+            isDragging = false;
+        });
+
+        // 鼠标支持
+        document.addEventListener('mousedown', (e) => {
+            if (isInteractiveTarget(e)) return;
+            const p = { x: e.clientX, y: e.clientY };
+            lastPos = p;
+            isDragging = false;
+            energyTrail = [];
+            pressTimer = setTimeout(() => {
+                isDragging = true;
+                openDragonEye(p.x, p.y);
+            }, 500);
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (e.buttons !== 1 || isInteractiveTarget(e) || !isDragging) return;
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            const p = { x: e.clientX, y: e.clientY };
+            addTrailPoint(p.x, p.y);
+            lastPos = p;
+        });
+        document.addEventListener('mouseup', (e) => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+                if (!isDragging) summonCircle(lastPos.x, lastPos.y);
+            }
+            isDragging = false;
+        });
     })();
     </script>
 </body>
