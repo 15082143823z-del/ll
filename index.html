@@ -3,1315 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>林丽 🌸</title>
+    <title>龙族</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             width: 100%; height: 100%; height: 100dvh;
             overflow: hidden;
-            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun", serif;
+            background: #0a0505;
+            color: #c8b89a;
             -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: pan-y;
-            background: #0a0a14;
-            color: #ffe4ec;
         }
 
-        /* ---- Card Stack ---- */
-        .card-stack {
-            position: relative;
-            width: 100%; height: 100%; height: 100dvh;
-        }
-
-        .card {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 60px 32px 120px;
-            transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
-                        opacity 0.5s ease;
-            will-change: transform, opacity;
-            z-index: 1;
-        }
-        .card.active   { z-index: 10; }
-        .card.swiping  { transition: none !important; }
-        .card.gone      { transform: translateY(-120%); opacity: 0; pointer-events: none; z-index: 0; }
-
-        /* Card backgrounds */
-        .card:nth-child(1) { background: radial-gradient(ellipse at 50% 30%, #1e1e3a 0%, #0a0a14 70%); }
-        .card:nth-child(2) { background: radial-gradient(ellipse at 50% 30%, #1a1e36 0%, #0a0a14 70%); }
-        .card:nth-child(3) { background: radial-gradient(ellipse at 50% 30%, #1c1a32 0%, #0a0a14 70%); }
-        .card:nth-child(4) { background: radial-gradient(ellipse at 50% 30%, #1e1c38 0%, #0a0a14 70%); }
-        .card:nth-child(5) { background: radial-gradient(ellipse at 50% 30%, #201a36 0%, #0a0a14 70%); }
-        .card:nth-child(6) { background: radial-gradient(ellipse at 50% 30%, #1c2036 0%, #0a0a14 70%); }
-
-        /* ---- Stars BG ---- */
-        .stars-bg {
-            position: absolute; top: 0; left: 0;
+        /* Canvas layers */
+        #emberCanvas, #dragonCanvas {
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none;
         }
-        .bg-star {
-            position: absolute;
-            width: 2px; height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle var(--d) ease-in-out infinite;
-            animation-delay: var(--dl);
-        }
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.15; }
-            50% { opacity: 0.9; }
-        }
+        #emberCanvas { z-index: 1; }
+        #dragonCanvas { z-index: 0; }
 
-        /* ---- Card Inner ---- */
-        .card-inner {
-            position: relative; z-index: 1;
-            text-align: center; max-width: 360px;
-        }
-        .card-emoji {
-            font-size: 50px; margin-bottom: 22px;
-            animation: gentleFloat 3.5s ease-in-out infinite;
-        }
-        @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-        }
-        .card-tag {
-            font-size: 12px; color: rgba(255,228,236,0.45);
-            letter-spacing: 8px; margin-bottom: 18px;
-        }
-        .card-msg {
-            font-size: 17px; line-height: 2.1;
-            color: rgba(255,228,236,0.88);
-            letter-spacing: 2px;
-        }
-        .card-msg b  { color: #ff6b8a; font-weight: 700; }
-        .card-msg .g { color: #f0d78c; }
-
-        .card-name {
-            font-size: clamp(44px, 11vw, 68px);
-            font-weight: 700;
-            letter-spacing: 14px;
-            background: linear-gradient(135deg, #ffb7c5, #ff6b8a, #f0d78c, #ffb7c5);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 4s ease infinite;
-            margin: 12px 0 18px;
-        }
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .card-heart {
-            font-size: 42px;
-            animation: heartbeat 1.2s ease-in-out infinite;
-        }
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); }
-            14% { transform: scale(1.3); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.2); }
-            56% { transform: scale(1); }
-        }
-
-        /* ---- Particle Canvas ---- */
-        #particleCanvas {
-            position: fixed; top: 0; left: 0;
+        /* Main content */
+        .main {
+            position: relative; z-index: 2;
             width: 100%; height: 100%;
-            pointer-events: none; z-index: 100;
-        }
-
-        /* ====== EASTER EGG (下拉彩蛋) ====== */
-        .easter-egg {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; height: 100dvh;
-            pointer-events: none;
-            z-index: 20;
-            opacity: 0;
-            transform: translateY(100%);
-            transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
-                        opacity 0.5s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            background: linear-gradient(180deg, rgba(10,10,20,0.92) 0%, #0a0a14 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-        .easter-egg.revealed {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .easter-egg.peeking {
-            transition: none;
-        }
-        .ee-content {
-            text-align: center;
-            padding: 80px 32px 60px;
-            position: relative; z-index: 1;
-            min-height: 100%; min-height: 100dvh;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
+            padding: 40px 28px;
+            text-align: center;
         }
-        .ee-name {
-            font-size: clamp(42px, 10vw, 58px);
-            font-weight: 700;
-            letter-spacing: 12px;
-            margin-bottom: 28px;
-            background: linear-gradient(135deg, #ffb7c5, #ff6b8a, #f0d78c, #ffb7c5);
-            background-size: 200% 200%;
+
+        /* Dragon title */
+        .title-wrap { margin-bottom: 32px; }
+        .dragon-glyph {
+            font-size: clamp(64px, 16vw, 100px);
+            line-height: 1;
+            animation: dragonIdle 4s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(180, 40, 20, 0.5));
+        }
+        @keyframes dragonIdle {
+            0%, 100% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-8px) scale(1.03); }
+            60% { transform: translateY(-3px) scale(1.01); }
+        }
+        .title-text {
+            font-size: clamp(36px, 8vw, 48px);
+            font-weight: 900;
+            letter-spacing: 16px;
+            background: linear-gradient(180deg, #d4a843 0%, #8b4513 40%, #cd853f 70%, #d4a843 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: gradientShift 4s ease infinite;
+            text-shadow: none;
+            margin: 8px 0 4px;
         }
-        .ee-story {
-            max-width: 340px;
+        .title-sub {
+            font-size: 13px;
+            letter-spacing: 8px;
+            color: rgba(180, 120, 60, 0.5);
         }
-        .ee-story p {
-            margin: 0 0 16px;
-            font-size: 15px; line-height: 1.9;
-            color: rgba(255,228,236,0.75);
-            letter-spacing: 2px;
-            animation: eeFadeUp 0.7s ease forwards;
-            opacity: 0;
-        }
-        .ee-story p:nth-child(1)  { animation-delay: 0.1s; }
-        .ee-story p:nth-child(2)  { animation-delay: 0.2s; }
-        .ee-story p:nth-child(3)  { animation-delay: 0.3s; }
-        .ee-story p:nth-child(4)  { animation-delay: 0.4s; }
-        .ee-story p:nth-child(5)  { animation-delay: 0.5s; }
-        .ee-story p:nth-child(6)  { animation-delay: 0.6s; }
-        .ee-story p:nth-child(7)  { animation-delay: 0.7s; }
-        .ee-story p:nth-child(8)  { animation-delay: 0.8s; }
-        .ee-story p:nth-child(9)  { animation-delay: 0.9s; }
-        .ee-story p:nth-child(10) { animation-delay: 1.0s; }
-        .ee-story p:nth-child(11) { animation-delay: 1.1s; }
-        .ee-story p:nth-child(12) { animation-delay: 1.2s; }
-        .ee-story p:nth-child(13) { animation-delay: 1.3s; }
-        @keyframes eeFadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .ee-hl {
-            color: #ff6b8a;
-            font-weight: 600;
-        }
-        .ee-big {
-            font-size: 18px;
-            font-weight: 700;
-            color: #f0d78c;
-            letter-spacing: 4px;
-        }
-        .ee-sunflower {
-            font-size: 40px;
-            margin: 24px 0 8px;
-            animation: eeSunBounce 2s ease-in-out infinite;
-        }
-        @keyframes eeSunBounce {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            30% { transform: translateY(-8px) rotate(5deg); }
-            60% { transform: translateY(0) rotate(-3deg); }
-        }
-        .ee-ending {
-            font-size: 15px;
-            color: #f0d78c !important;
-            opacity: 0.8 !important;
+
+        /* Quote */
+        .quote {
+            font-family: "STKaiti", "KaiTi", "SimSun", serif;
+            font-size: 15px; line-height: 2;
+            color: rgba(200, 160, 100, 0.7);
             letter-spacing: 3px;
-            font-style: italic;
+            max-width: 320px;
+            margin-bottom: 36px;
         }
-        .ee-sparkles {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .ee-spark {
-            position: absolute;
-            width: 3px; height: 3px;
-            border-radius: 50%;
-            background: #f0d78c;
-            animation: eeSparkFloat 2.5s ease-in-out infinite;
-            animation-delay: var(--sd);
-            opacity: 0;
-        }
-        @keyframes eeSparkFloat {
-            0%   { transform: translateY(60vh) scale(0); opacity: 0; }
-            40%  { opacity: 0.8; }
-            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-        }
-        /* 下拉提示箭头 */
-        .ee-hint {
-            position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%);
-            font-size: 14px; color: rgba(255,107,138,0.65);
-            letter-spacing: 4px;
-            z-index: 25;
-            font-weight: 600;
-            animation: eeHintBounce 2s ease-in-out infinite;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
-        .ee-hint.show { opacity: 1; pointer-events: auto; cursor: pointer; }
-        .ee-hint .ee-arr {
-            display: inline-block;
-            animation: eeArrDown 1.5s ease-in-out infinite;
-        }
-        @keyframes eeHintBounce {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-        }
-        @keyframes eeArrDown {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(6px); }
+        .quote em {
+            font-style: normal;
+            color: #d4a843;
         }
 
-        /* ---- UI ---- */
-        .progress {
-            position: fixed; bottom: 80px; left: 50%;
-            transform: translateX(-50%);
-            display: flex; gap: 10px; z-index: 200;
+        /* Dragon runes */
+        .runes {
+            display: flex; gap: 16px; margin-bottom: 40px;
         }
-        .dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.22);
-            transition: all 0.4s ease;
-        }
-        .dot.done    { background: #ff6b8a; opacity: 0.7; }
-        .dot.current { background: #ff6b8a; box-shadow: 0 0 12px #ff6b8a; transform: scale(1.35); }
-
-        /* ====== CUPID SCENE (final card) ====== */
-        .cupid-scene {
-            position: relative;
-            width: 280px; height: 180px;
-            margin: 0 auto 10px;
-            overflow: visible;
-        }
-        /* Cupid character */
-        .cupid-char {
-            position: absolute;
-            left: -10px; bottom: 10px;
-            font-size: 50px;
-            animation: cupidReady 0.6s ease-out forwards,
-                       cupidBounce 2s 0.6s ease-in-out infinite;
-        }
-        @keyframes cupidReady {
-            0%   { transform: translateX(-60px) scale(0); opacity: 0; }
-            100% { transform: translateX(0) scale(1); opacity: 1; }
-        }
-        @keyframes cupidBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-        /* Arrow */
-        .cupid-arrow {
-            position: absolute;
-            left: 42px; bottom: 38px;
-            font-size: 28px;
-            animation: arrowShoot 0.7s 0.6s cubic-bezier(0.25, 0.1, 0.0, 1.0) forwards;
-            transform-origin: left center;
-        }
-        @keyframes arrowShoot {
-            0%   { transform: translateX(0) rotate(0deg); opacity: 0; }
-            15%  { opacity: 1; }
-            100% { transform: translateX(210px) rotate(5deg); opacity: 1; }
-        }
-        /* Arrow trail sparkles */
-        .arrow-trail {
-            position: absolute;
-            left: 42px; bottom: 38px;
-            width: 0; height: 2px;
-            background: linear-gradient(90deg, #f0d78c, #ff6b8a, transparent);
-            border-radius: 1px;
-            animation: trailGrow 0.65s 0.6s ease-out forwards;
-        }
-        @keyframes trailGrow {
-            0%   { width: 0; opacity: 0.8; }
-            80%  { width: 200px; opacity: 0.6; }
-            100% { width: 0; opacity: 0; }
-        }
-        /* Target heart */
-        .cupid-heart {
-            position: absolute;
-            right: 10px; bottom: 30px;
-            font-size: 56px;
-            animation: heartWait 0.9s ease-out forwards,
-                       heartBeat 0.8s 0.9s ease-in-out 2,
-                       heartStruck 0.3s 1.5s ease-out forwards;
-            filter: drop-shadow(0 0 0px transparent);
-        }
-        @keyframes heartWait {
-            0%   { transform: scale(0); opacity: 0; }
-            80%  { transform: scale(0); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes heartBeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.25); }
-        }
-        @keyframes heartStruck {
-            0%   { transform: scale(1.25); filter: drop-shadow(0 0 15px #ff6b8a); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 20px #ff6b8a) drop-shadow(0 0 40px #ff6b8a); }
-        }
-        /* Impact burst particles */
-        .impact-particle {
-            position: absolute;
-            width: 4px; height: 4px;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: impactBurst 1.2s 1.6s ease-out forwards;
-        }
-        @keyframes impactBurst {
-            0%   { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--ix), var(--iy)) scale(0); opacity: 0; }
-        }
-        /* Struck heart emoji */
-        .heart-struck-emoji {
-            position: absolute;
-            right: 5px; bottom: 42px;
+        .rune {
+            width: 36px; height: 36px;
+            border: 1px solid rgba(180, 120, 60, 0.3);
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
             font-size: 18px;
-            opacity: 0;
-            animation: struckAppear 0.4s 1.8s ease-out forwards,
-                       struckFloat 2s 2.2s ease-in-out infinite;
+            color: rgba(200, 160, 100, 0.5);
+            animation: runeGlow 2s ease-in-out infinite;
         }
-        @keyframes struckAppear {
-            0%   { transform: scale(3); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes struckFloat {
-            0%, 100% { transform: translateY(0) rotate(-5deg); }
-            50% { transform: translateY(-8px) rotate(5deg); }
+        .rune:nth-child(1) { animation-delay: 0s; }
+        .rune:nth-child(2) { animation-delay: 0.3s; }
+        .rune:nth-child(3) { animation-delay: 0.6s; }
+        .rune:nth-child(4) { animation-delay: 0.9s; }
+        .rune:nth-child(5) { animation-delay: 1.2s; }
+        @keyframes runeGlow {
+            0%, 100% { border-color: rgba(180,120,60,0.3); color: rgba(200,160,100,0.5); }
+            50% { border-color: rgba(200,40,20,0.6); color: rgba(220,60,30,0.9); box-shadow: 0 0 8px rgba(200,40,20,0.3); }
         }
 
-        /* Reset Btn */
-        .reset-btn {
-            position: fixed; top: 24px; left: 20px; z-index: 300;
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: rgba(255,255,255,0.55); font-size: 16px;
-            cursor: pointer; outline: none;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.35s;
-            opacity: 0; pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
+        /* Characters */
+        .chars {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px; width: 100%; max-width: 320px;
         }
-        .reset-btn.show { opacity: 1; pointer-events: auto; }
-        .reset-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.12); }
-
-        @media (max-width: 400px) {
-            .card { padding: 40px 24px 110px; }
-            .card-emoji { font-size: 40px; margin-bottom: 16px; }
-            .card-msg { font-size: 15px; }
-            .progress { bottom: 70px; }
+        .char-card {
+            background: rgba(20, 10, 5, 0.6);
+            border: 1px solid rgba(100, 60, 20, 0.3);
+            border-radius: 8px;
+            padding: 14px 10px;
+            text-align: center;
+            backdrop-filter: blur(4px);
         }
-        /* ====== 密码门 ====== */
-        .pw-gate {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100dvh;
-            z-index: 9999;
-            background: radial-gradient(ellipse at 50% 30%, #1a1a2e 0%, #0a0a14 70%);
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-        .pw-bg-stars {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
-        @keyframes twinklePw {
-            0%, 100% { opacity: 0.15; }
-            50% { opacity: 0.9; }
-        }
-        .pw-box {
-            position: relative; z-index: 1;
-            text-align: center; padding: 40px 28px;
-            max-width: 340px; width: 88vw;
-        }
-        .pw-icon {
-            font-size: 48px; margin-bottom: 12px;
-            animation: gentleFloat 3.5s ease-in-out infinite;
-        }
-        .pw-title {
-            font-size: 36px; font-weight: 700;
-            letter-spacing: 12px;
-            background: linear-gradient(135deg, #ffb7c5, #ff6b8a, #f0d78c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-        }
-        .pw-sub {
-            font-size: 13px; color: rgba(255,228,236,0.55);
-            letter-spacing: 3px; margin-bottom: 28px;
-        }
-        .pw-input-wrap {
-            display: flex; align-items: center;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 28px; padding: 2px;
-            transition: border-color 0.3s;
-        }
-        .pw-input-wrap:focus-within {
-            border-color: rgba(255,107,138,0.5);
-            box-shadow: 0 0 20px rgba(255,107,138,0.1);
-        }
-        .pw-input {
-            flex: 1; background: none; border: none; outline: none;
-            color: #ffe4ec; font-size: 16px;
-            padding: 12px 10px 12px 20px;
-            letter-spacing: 4px;
-            font-family: inherit;
-            -webkit-appearance: none;
-        }
-        .pw-input::placeholder {
-            color: rgba(255,255,255,0.2);
-            letter-spacing: 2px;
-        }
-        .pw-btn {
-            width: 42px; height: 42px;
-            border-radius: 50%; border: none;
-            background: linear-gradient(135deg, #ff6b8a, #f0d78c);
-            color: #1a1a2e; font-size: 20px; font-weight: 700;
-            cursor: pointer; outline: none;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform 0.2s, opacity 0.2s;
-            flex-shrink: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .pw-btn:active { transform: scale(0.9); }
-        .pw-error {
-            color: #ff6b8a; font-size: 13px;
-            margin-top: 12px; letter-spacing: 2px;
-            opacity: 0; transition: opacity 0.3s;
-            min-height: 20px;
-        }
-        .pw-hint {
-            margin-top: 24px; font-size: 13px;
-            color: rgba(255,228,236,0.55);
+        .char-icon { font-size: 28px; margin-bottom: 4px; }
+        .char-name {
+            font-size: 14px; font-weight: 700;
             letter-spacing: 3px;
+            color: #d4a843;
         }
-        /* ====== 蛋裂开动画 ====== */
-        .egg-crack-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 999;
-            pointer-events: none;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .egg-shell {
-            font-size: 120px;
-            animation: eggShake 0.15s ease 3, eggCrack 0.6s 0.45s ease-out forwards;
-            transform-origin: center;
-        }
-        @keyframes eggShake {
-            0%, 100% { transform: rotate(0); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-        @keyframes eggCrack {
-            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
-            30% { transform: scale(1.1); opacity: 1; filter: brightness(1.3); }
-            100% { transform: scale(1.5); opacity: 0; filter: brightness(2) blur(10px); }
-        }
-        .egg-crack-line {
-            position: absolute;
-            font-size: 130px;
-            opacity: 0;
-            animation: crackAppear 0.2s 0.5s ease-out forwards;
-        }
-        @keyframes crackAppear {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .egg-pieces {
-            position: absolute;
-            font-size: 30px;
-            opacity: 0;
-            animation: pieceFly var(--dur) 0.7s ease-out forwards;
-        }
-        @keyframes pieceFly {
-            0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); }
-            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); }
+        .char-desc {
+            font-size: 11px; color: rgba(180,140,100,0.5);
+            letter-spacing: 2px; margin-top: 2px;
         }
 
-        .shake {
-            animation: shakeX 0.4s ease;
-        }
-        @keyframes shakeX {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            50% { transform: translateX(8px); }
-            75% { transform: translateX(-5px); }
+        /* Bottom */
+        .bottom {
+            position: fixed; bottom: 32px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px; color: rgba(180,120,60,0.3);
+            letter-spacing: 6px; z-index: 2;
         }
 
+        /* Landscape */
+        @media (max-width: 480px) and (orientation: landscape) {
+            .main { padding: 20px; }
+            .dragon-glyph { font-size: 48px; }
+            .title-text { font-size: 28px; }
+            .chars { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            .char-card { padding: 8px 4px; }
+            .char-icon { font-size: 22px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- ====== 密码门 ====== -->
-    <div class="pw-gate" id="pwGate">
-        <div class="pw-bg-stars" id="pwStars"></div>
-        <div class="pw-box">
-            <div class="pw-icon">🌙</div>
-            <div class="pw-title">林丽</div>
-            <div class="pw-sub">输入密码，进入属于你的星空</div>
-            <div class="pw-input-wrap">
-                <input type="password" class="pw-input" id="pwInput" placeholder="请输入密码" maxlength="20" autocomplete="off">
-                <button class="pw-btn" id="pwBtn">→</button>
-            </div>
-            <div class="pw-error" id="pwError"></div>
-        </div>
-    </div>
+    <canvas id="emberCanvas"></canvas>
+    <canvas id="dragonCanvas"></canvas>
 
-    <!-- ====== 主内容（初始隐藏） ====== -->
-    <div id="mainContent" style="display:none;">
-
-    <!-- 本地音乐 -->
-    <audio id="bgAudio" loop preload="auto" src="music.mp3"></audio>
-
-    <!-- Particle Canvas -->
-    <canvas id="particleCanvas"></canvas>
-
-    <!-- Reset -->
-    <button class="reset-btn" id="resetBtn" aria-label="重新开始">🔄</button>
-
-    <!-- Stack -->
-    <div class="card-stack" id="stack">
-
-        <!-- 1 -->
-        <div class="card active" data-i="0">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <div class="card-emoji">🌙</div>
-                <div class="card-tag">第 一 次</div>
-                <div class="card-msg">有些话<br>藏在心里很久了<br>今天想说给你听</div>
-            </div>
+    <div class="main">
+        <div class="title-wrap">
+            <div class="dragon-glyph">🐉</div>
+            <div class="title-text">龙 族</div>
+            <div class="title-sub">D R A G O N &nbsp; R A J A</div>
         </div>
 
-        <!-- 2 -->
-        <div class="card" data-i="1">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <div class="card-emoji">✨</div>
-                <div class="card-tag">注 意 到 你</div>
-                <div class="card-msg">不知道从哪天开始<br>我的目光<br>总是<b>不由自主</b><br>落在你身上</div>
-            </div>
+        <div class="quote">
+            「凡王之血<br>必以剑终」<br><br>
+            <em>—— 路明非</em>
         </div>
 
-        <!-- 3 -->
-        <div class="card" data-i="2">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <div class="card-emoji">🌸</div>
-                <div class="card-tag">你 笑 的 时 候</div>
-                <div class="card-msg">你笑起来的样子<br>像<b>春天</b>的第一缕风<br>像夜空里<br>最温柔的<span class="g">那颗星</span></div>
-            </div>
+        <div class="runes">
+            <div class="rune">竜</div>
+            <div class="rune">剣</div>
+            <div class="rune">炎</div>
+            <div class="rune">契</div>
+            <div class="rune">龍</div>
         </div>
 
-        <!-- 4 -->
-        <div class="card" data-i="3">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <div class="card-emoji">💭</div>
-                <div class="card-tag">想 念</div>
-                <div class="card-msg">见不到你的时候<br>会偷偷<b>翻你的QQ空间</b><br>看到你的消息<br>心跳就会快半拍</div>
+        <div class="chars">
+            <div class="char-card">
+                <div class="char-icon">🗡️</div>
+                <div class="char-name">路明非</div>
+                <div class="char-desc">S级·白王</div>
             </div>
-        </div>
-
-        <!-- 5 -->
-        <div class="card" data-i="4">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <div class="card-emoji">💌</div>
-                <div class="card-tag">想 对 你 说</div>
-                <div class="card-msg">我喜欢你<br><b>林丽</b><br>不是一时兴起<br>而是<span class="g">蓄谋已久</span></div>
+            <div class="char-card">
+                <div class="char-icon">⚔️</div>
+                <div class="char-name">楚子航</div>
+                <div class="char-desc">狮心会·村雨</div>
             </div>
-        </div>
-
-        <!-- 6 (final) -->
-        <div class="card" data-i="5">
-            <div class="stars-bg"></div>
-            <div class="card-inner">
-                <!-- Cupid Scene -->
-                <div class="cupid-scene" id="cupidScene">
-                    <div class="cupid-char">🏹</div>
-                    <div class="arrow-trail"></div>
-                    <div class="cupid-arrow">💘</div>
-                    <div class="cupid-heart">❤️</div>
-                    <div class="heart-struck-emoji">💕</div>
-                </div>
-                <div class="card-name">林丽</div>
-                <div class="card-msg">愿你每一天<br>都被<b>温柔</b>以待<br><br><span style="font-size:13px;opacity:0.45;">—— 一个偷偷喜欢你的人</span></div>
+            <div class="char-card">
+                <div class="char-icon">🛡️</div>
+                <div class="char-name">凯撒</div>
+                <div class="char-desc">学生会·狄克推多</div>
+            </div>
+            <div class="char-card">
+                <div class="char-icon">🏹</div>
+                <div class="char-name">诺诺</div>
+                <div class="char-desc">陈墨瞳·红发</div>
             </div>
         </div>
     </div>
 
-    <!-- 🌸 彩蛋：林美丽 -->
-    <div class="easter-egg" id="easterEgg">
-        <div class="ee-sparkles" id="eeSparkles"></div>
-        <div class="ee-content">
-            <div class="ee-name">林丽</div>
-            <div class="ee-story">
-                <p>走过<span class="ee-hl">两年半</span></p>
-                <p>从<span class="ee-hl">高一的那个金秋</span><br>到现在的盛夏</p>
-                <p>从一个<span class="ee-hl">收获</span>的季节<br>到一个<span class="ee-hl">繁盛</span>的季节</p>
-                <p>从一次开始的<span class="ee-hl">小天才</span><br>到一个并不熟络的交流</p>
-                <p>你的<span class="ee-hl">校运会跳高</span><br>你的<span class="ee-hl">向日葵</span>（丢失版）</p>
-                <p>用小天才<span class="ee-hl">聊天</span>的夜晚<br>像一把刻刀<br>镌刻在我的脑海中</p>
-                <p>也许我的敏感<br>你为期末的准备<br>突然的不回答<br>使我<span class="ee-hl">忐忑不安</span></p>
-                <p>我曾想过更进一步<br>但仍然<span class="ee-hl">犹豫不决</span></p>
-                <p>诚然我暗恋你<br>（可能很明显，我无法把握）</p>
-                <p>从功利来说为了<span class="ee-hl">不留遗憾</span><br>从个人角度为了<br>让高中有一个<span class="ee-hl">好的句号</span></p>
-                <p>但无论如何<br><span class="ee-big">人生是过程<br>而不是一个结果</span></p>
-                <div class="ee-sunflower">🌻</div>
-                <p class="ee-ending">向日葵，总是向着太阳。</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Progress -->
-    <div class="progress" id="prog"></div>
-
-    <!-- Easter egg hint (last page only) -->
-    <div class="ee-hint" id="eeHint">
-        <span class="ee-arr">👇</span> 点我 <span class="ee-arr">👇</span>
-    </div>
+    <div class="bottom">— 卡塞尔学院 —</div>
 
     <script>
     (function() {
-        const stack    = document.getElementById('stack');
-        const cards    = Array.from(stack.querySelectorAll('.card'));
-        const total    = cards.length;
-        let   curIdx   = 0;
-        let   swiping  = false;
-        const THRESH   = 70;
+        // === Ember Canvas (floating fire particles) ===
+        const emberCanvas = document.getElementById('emberCanvas');
+        const ectx = emberCanvas.getContext('2d');
+        let embers = [];
 
-        const progEl   = document.getElementById('prog');
-        const resetBtn = document.getElementById('resetBtn');
-        const easter   = document.getElementById('easterEgg');
-        const eeHint   = document.getElementById('eeHint');
-        // 点击提示也能触发彩蛋
-        eeHint.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (curIdx === total - 1 && !easterRevealed) {
-                revealEasterEgg();
-            }
-        });
-        const canvas   = document.getElementById('particleCanvas');
-        const ctx      = canvas.getContext('2d');
-        const audio    = document.getElementById('bgAudio');
-        let easterRevealed = false;
-        const EE_THRESH   = 50; // 下拉彩蛋触发阈值
-
-        // ---- Canvas Size ----
-        function resizeCanvas() {
-            canvas.width  = window.innerWidth;
-            canvas.height = window.innerHeight;
+        function resizeEmber() {
+            emberCanvas.width = window.innerWidth;
+            emberCanvas.height = window.innerHeight;
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        resizeEmber();
+        window.addEventListener('resize', resizeEmber);
 
-        // ---- Progress dots ----
-        for (let i = 0; i < total; i++) {
-            const d = document.createElement('div');
-            d.className = 'dot' + (i === 0 ? ' current' : '');
-            progEl.appendChild(d);
-        }
-        const dots = Array.from(progEl.children);
-
-        // ---- BG Stars per card ----
-        cards.forEach(card => {
-            const bg = card.querySelector('.stars-bg');
-            for (let i = 0; i < 20; i++) {
-                const s = document.createElement('div');
-                s.className = 'bg-star';
-                s.style.left  = Math.random() * 100 + '%';
-                s.style.top   = Math.random() * 100 + '%';
-                s.style.setProperty('--d',  (2 + Math.random() * 4) + 's');
-                s.style.setProperty('--dl', Math.random() * 4 + 's');
-                bg.appendChild(s);
-            }
-        });
-
-        // ============ PARTICLE SYSTEM ============
-        let particles = [];
-
-        function spawnBurst(cardEl) {
-            const rect = cardEl.getBoundingClientRect();
-            const count = 80;
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const now = performance.now();
-
-            for (let i = 0; i < count; i++) {
-                // Random position across the card
-                const x = rect.left + Math.random() * rect.width;
-                const y = rect.top  + Math.random() * rect.height;
-
-                // Velocity: drift upward + random spread
-                const angle  = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 1.4;
-                const speed  = 1.5 + Math.random() * 5;
-                const vx     = Math.cos(angle) * speed;
-                const vy     = Math.sin(angle) * speed;
-
-                // Variety: gold, pink, white
-                const colorRand = Math.random();
-                let r, g, b;
-                if (colorRand < 0.35) {
-                    r=240; g=215; b=140; // gold
-                } else if (colorRand < 0.7) {
-                    r=255; g=107; b=138; // pink
-                } else {
-                    r=255; g=255; b=255; // white
-                }
-
-                particles.push({
-                    x, y, vx, vy,
-                    r, g, b,
-                    size: 1.5 + Math.random() * 3.5,
-                    life: 0.7 + Math.random() * 1.3,
-                    born: now,
-                    alpha: 1,
-                    twinkle: Math.random() * Math.PI * 2
-                });
-            }
+        function createEmber() {
+            return {
+                x: Math.random() * emberCanvas.width,
+                y: emberCanvas.height + 20,
+                r: 1 + Math.random() * 3,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: -(0.3 + Math.random() * 1.2),
+                life: 1, decay: 0.003 + Math.random() * 0.008,
+                hue: 15 + Math.random() * 30 // orange-red range
+            };
         }
 
-        function updateParticles(now) {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                const elapsed = (now - p.born) / 1000;
-
-                if (elapsed > p.life) {
-                    particles.splice(i, 1);
-                    continue;
-                }
-
-                const progress = elapsed / p.life;
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vx *= 0.995;
-                p.vy *= 0.995;
-                // Fade
-                p.alpha = 1 - progress;
-                // Twinkle size
-                p.twinkle += 0.15;
-                const sizeFactor = 1 + Math.sin(p.twinkle * 8) * 0.4;
-                p.displaySize = p.size * sizeFactor * (1 - progress * 0.7);
-            }
-        }
-
-        function drawParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (const p of particles) {
-                ctx.save();
-                ctx.globalAlpha = p.alpha;
-                // Glow
-                ctx.shadowColor = `rgba(${p.r},${p.g},${p.b},${p.alpha * 0.7})`;
-                ctx.shadowBlur  = p.displaySize * 2.5;
-                ctx.fillStyle   = `rgba(${p.r},${p.g},${p.b},1)`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.displaySize, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function particleLoop(now) {
-            updateParticles(now);
-            drawParticles();
-            if (particles.length > 0) {
-                requestAnimationFrame(particleLoop);
-            } else {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        }
-
-        // ============ SWIPE ============
-        let startY = 0, startX = 0, activeTouch = false;
-
-        function onDown(e) {
-            // 最后一页允许下拉彩蛋，但禁止上滑
-            if (curIdx >= total - 1 && easterRevealed) return;
-            const p = e.touches ? e.touches[0] : e;
-            startX = p.clientX;
-            startY = p.clientY;
-            activeTouch = true;
-            swiping = true;
-            cards[curIdx].classList.add('swiping');
-        }
-
-        function onMove(e) {
-            if (!swiping || !activeTouch) return;
-            const p = e.touches ? e.touches[0] : e;
-            const dy = p.clientY - startY;
-
-            // 最后一页：允许下拉（彩蛋），带阻滞感
-            if (curIdx === total - 1 && dy > 0 && !easterRevealed) {
-                const resistance = dy * 0.35; // 阻滞感，但给足够视觉反馈
-                const card = cards[curIdx];
-                card.style.transform = `translateY(${resistance}px)`;
-                card.style.opacity   = Math.max(0.3, 1 - resistance / 200);
-                // 彩蛋面板渐渐露出来
-                const peek = Math.min(resistance / 120, 1);
-                easter.style.transform = `translateY(${(1 - peek) * 100}%)`;
-                easter.style.opacity   = peek * 0.9;
-                easter.classList.add('peeking');
-                eeHint.style.opacity = Math.max(0, 1 - resistance / 40);
-                return;
-            }
-
-            // 正常页：只允许上滑
-            if (dy > 5) return;
-            const card = cards[curIdx];
-            card.style.transform = `translateY(${dy}px)`;
-            card.style.opacity   = Math.max(0, 1 + dy / 500);
-        }
-
-        function onUp(e) {
-            if (!activeTouch) return;
-            activeTouch = false;
-            swiping = false;
-            const card = cards[curIdx];
-            card.classList.remove('swiping');
-
-            const p = e.changedTouches ? e.changedTouches[0] : e;
-            const dy = (p ? p.clientY : startY) - startY;
-
-            // 最后一页下拉彩蛋
-            if (curIdx === total - 1 && dy > EE_THRESH && !easterRevealed) {
-                revealEasterEgg();
-                card.style.transform = '';
-                card.style.opacity = '';
-                return;
-            }
-
-            // 最后一页下拉不够 → 弹回
-            if (curIdx === total - 1 && dy > 0 && !easterRevealed) {
-                card.style.transform = '';
-                card.style.opacity = '';
-                easter.classList.remove('peeking');
-                easter.style.transform = 'translateY(100%)';
-                easter.style.opacity = '0';
-                eeHint.style.opacity = '1';
-                return;
-            }
-
-            if (dy < -THRESH) {
-                // SWIPED UP → dissolve
-                card.classList.add('gone');
-                card.style.transform = '';
-                card.style.opacity = '';
-                spawnBurst(card);
-                requestAnimationFrame(particleLoop);
-                goTo(curIdx + 1);
-            } else {
-                // Snap back
-                card.style.transform = '';
-                card.style.opacity = '';
-            }
-        }
-
-        // --- Reveal Easter Egg ---
-        function revealEasterEgg() {
-            easterRevealed = true;
-            eeHint.style.opacity = '0';
-
-            // 蛋裂开动画
-            showEggCrack(() => {
-                // 卡片淡出
-                const card = cards[total - 1];
-                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                card.style.opacity = '0.15';
-                card.style.transform = 'scale(0.95)';
-
-                // 彩蛋：用 animate() API 从当前位置平滑滑入，避免CSS过渡跳闪
-                easter.classList.remove('peeking');
-                const curY = easter.getBoundingClientRect().top;
-                const targetY = 0;
-                easter.style.transform = '';
-                easter.style.opacity = '1';
-                easter.classList.add('revealed');
-                easter.style.transition = 'none';
-                easter.animate([
-                    { transform: 'translateY(' + curY + 'px)', opacity: 0.3 },
-                    { transform: 'translateY(0px)', opacity: 1 }
-                ], {
-                    duration: 500,
-                    easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
-                    fill: 'forwards'
-                }).onfinish = () => {
-                    easter.style.transform = '';
-                    easter.style.opacity = '';
-                    easter.style.transition = '';
-                };
-                spawnEESparkles();
-            });
-        }
-
-        // --- 蛋裂开特效 ---
-        function showEggCrack(callback) {
-            const overlay = document.createElement('div');
-            overlay.className = 'egg-crack-overlay';
-            overlay.style.background = 'rgba(10,10,20,0.85)';
-            overlay.style.backdropFilter = 'blur(4px)';
-            overlay.style.webkitBackdropFilter = 'blur(4px)';
-            overlay.innerHTML = '<span class="egg-shell">🥚</span><span class="egg-crack-line">💥</span>';
-            document.body.appendChild(overlay);
-
-            // 飞散的蛋壳碎片
-            const pieces = ['🧩','✨','💫','⭐','🌟','💛','🫧'];
-            for (let i = 0; i < 12; i++) {
-                const p = document.createElement('span');
-                p.className = 'egg-pieces';
-                p.textContent = pieces[Math.floor(Math.random() * pieces.length)];
-                p.style.setProperty('--dx', (Math.random()*200-100) + 'px');
-                p.style.setProperty('--dy', (Math.random()*200-100) + 'px');
-                p.style.setProperty('--rot', (Math.random()*720-360) + 'deg');
-                p.style.setProperty('--dur', (0.5+Math.random()*0.8) + 's');
-                overlay.appendChild(p);
-            }
-
-            // 1.2秒后移除overlay，执行callback
-            setTimeout(() => {
-                overlay.remove();
-                if (callback) callback();
-            }, 1200);
-        }
-
-        function hideEasterEgg() {
-            easterRevealed = false;
-            // 停止所有动画
-            easter.getAnimations().forEach(a => a.cancel());
-            easter.classList.remove('revealed', 'peeking');
-            easter.style.cssText = 'transform: translateY(100%); opacity: 0; transition: none;';
-            eeHint.classList.remove('show');
-            const card = cards[total - 1];
-            card.style.cssText = '';
-        }
-
-        // 彩蛋背景火花
-        function spawnEESparkles() {
-            const container = document.getElementById('eeSparkles');
-            if (!container) return;
-            container.innerHTML = '';
-            const colors = ['#f0d78c', '#ff6b8a', '#ffb7c5', '#ffccd5', '#fff'];
-            for (let i = 0; i < 30; i++) {
-                const s = document.createElement('div');
-                s.className = 'ee-spark';
-                s.style.left = Math.random() * 100 + '%';
-                s.style.top  = 60 + Math.random() * 40 + '%';
-                s.style.setProperty('--sd', Math.random() * 2.5 + 's');
-                s.style.background = colors[Math.floor(Math.random() * colors.length)];
-                s.style.width  = (2 + Math.random() * 4) + 'px';
-                s.style.height = s.style.width;
-                container.appendChild(s);
-            }
-        }
-
-        // Touch
-        stack.addEventListener('touchstart',  onDown, { passive: true });
-        stack.addEventListener('touchmove',   onMove, { passive: true });
-        stack.addEventListener('touchend',    onUp);
-
-        // Mouse
-        let mouseDown = false;
-        stack.addEventListener('mousedown', (e) => { onDown(e); mouseDown = true; });
-        window.addEventListener('mousemove', (e) => {
-            if (!mouseDown) return;
-            const dy = e.clientY - startY;
-
-            // 最后一页下拉彩蛋（带阻滞感）
-            if (curIdx === total - 1 && dy > 0 && !easterRevealed) {
-                const resistance = dy * 0.18;
-                const card = cards[curIdx];
-                card.style.transform = `translateY(${resistance}px)`;
-                card.style.opacity   = Math.max(0.3, 1 - resistance / 200);
-                const peek = Math.min(resistance / 120, 1);
-                easter.style.transform = `translateY(${(1 - peek) * 100}%)`;
-                easter.style.opacity   = peek * 0.9;
-                easter.classList.add('peeking');
-                eeHint.style.opacity = Math.max(0, 1 - resistance / 40);
-                return;
-            }
-
-            if (dy > 5) return;
-            const card = cards[curIdx];
-            card.style.transform = `translateY(${dy}px)`;
-            card.style.opacity   = Math.max(0, 1 + dy / 500);
-        });
-        window.addEventListener('mouseup', (e) => {
-            if (!mouseDown) return;
-            mouseDown = false;
-            activeTouch = false;
-            const card = cards[curIdx];
-            card.classList.remove('swiping');
-            const dy = e.clientY - startY;
-
-            // 最后一页下拉彩蛋
-            if (curIdx === total - 1 && dy > EE_THRESH && !easterRevealed) {
-                revealEasterEgg();
-                card.style.transform = '';
-                card.style.opacity = '';
-                return;
-            }
-            if (curIdx === total - 1 && dy > 0 && !easterRevealed) {
-                card.style.transform = '';
-                card.style.opacity = '';
-                easter.classList.remove('peeking');
-                easter.style.transform = 'translateY(100%)';
-                easter.style.opacity = '0';
-                eeHint.style.opacity = '1';
-                return;
-            }
-
-            if (dy < -THRESH) {
-                card.classList.add('gone');
-                card.style.transform = '';
-                card.style.opacity = '';
-                spawnBurst(card);
-                requestAnimationFrame(particleLoop);
-                goTo(curIdx + 1);
-            } else {
-                card.style.transform = '';
-                card.style.opacity = '';
-            }
-        });
-
-        // Keyboard
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                e.preventDefault();
-                if (curIdx >= total - 1) return;
-                const card = cards[curIdx];
-                spawnBurst(card);
-                requestAnimationFrame(particleLoop);
-                card.classList.add('gone');
-                goTo(curIdx + 1);
-            }
-        });
-
-        // ---- Nav ----
-        function goTo(idx) {
-            if (idx < 0 || idx >= total) return;
-            curIdx = idx;
-            dots.forEach((d, i) => {
-                d.classList.toggle('done',    i < idx);
-                d.classList.toggle('current', i === idx);
-            });
-            cards.forEach((c, i) => {
-                if (i === idx) {
-                    c.classList.add('active');
-                    c.style.transform = '';
-                    c.style.opacity = '';
-                }
-            });
-            if (idx >= total - 1) {
-                resetBtn.classList.add('show');
-                // 显示下拉提示
-                eeHint.classList.add('show');
-                // --- Restart Cupid animation ---
-                restartCupid();
-                // --- Spawn impact sparkles ---
-                setTimeout(spawnImpactParticles, 1600);
-            }
-        }
-
-        // ===== Cupid Animation =====
-        function restartCupid() {
-            const scene = document.getElementById('cupidScene');
-            if (!scene) return;
-            // Clear old impact particles
-            scene.querySelectorAll('.impact-particle').forEach(p => p.remove());
-            // Reset all animated children
-            const els = scene.querySelectorAll('.cupid-char, .cupid-arrow, .arrow-trail, .cupid-heart, .heart-struck-emoji');
-            els.forEach(el => {
-                el.style.animation = 'none';
-            });
-            // Force reflow
-            scene.offsetHeight;
-            // Remove inline animation to restart CSS animations
-            els.forEach(el => {
-                el.style.animation = '';
-            });
-        }
-
-        function spawnImpactParticles() {
-            const scene = document.getElementById('cupidScene');
-            if (!scene) return;
-            const heart = scene.querySelector('.cupid-heart');
-            if (!heart) return;
-            const hRect = heart.getBoundingClientRect();
-            const sRect = scene.getBoundingClientRect();
-            const cx = hRect.left + hRect.width/2 - sRect.left;
-            const cy = hRect.top + hRect.height/2 - sRect.top;
-            const colors = ['#ff6b8a', '#f0d78c', '#ffb7c5', '#fff', '#ffccd5'];
-            for (let i = 0; i < 20; i++) {
-                const p = document.createElement('div');
-                p.className = 'impact-particle';
-                const angle = Math.random() * Math.PI * 2;
-                const dist  = 20 + Math.random() * 60;
-                p.style.left = cx + 'px';
-                p.style.top  = cy + 'px';
-                p.style.setProperty('--ix', Math.cos(angle) * dist + 'px');
-                p.style.setProperty('--iy', Math.sin(angle) * dist + 'px');
-                p.style.background = colors[Math.floor(Math.random() * colors.length)];
-                p.style.width  = (3 + Math.random() * 5) + 'px';
-                p.style.height = p.style.width;
-                p.style.animationDelay = Math.random() * 0.3 + 's';
-                scene.appendChild(p);
-                setTimeout(() => p.remove(), 1600);
-            }
-        }
-
-        // ---- Reset ----
-        resetBtn.addEventListener('click', () => {
-            cards.forEach(c => {
-                c.classList.remove('gone', 'swiping', 'active');
-                c.style.transform = '';
-                c.style.opacity = '';
-            });
-            cards[0].classList.add('active');
-            particles = [];
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            curIdx = 0;
-            dots.forEach((d, i) => {
-                d.classList.toggle('done', false);
-                d.classList.toggle('current', i === 0);
-            });
-            resetBtn.classList.remove('show');
-            // 隐藏彩蛋
-            hideEasterEgg();
-            // Clear cupid particles
-            const scene = document.getElementById('cupidScene');
-            if (scene) scene.querySelectorAll('.impact-particle').forEach(p => p.remove());
-        });
-
-        // ---- Music（密码正确后由密码门触发） ----
-        audio.loop = true;
-        audio.volume = 0.6;
-
-        console.log('🌸 林丽 —— 向上滑动，让每一页如星散落');
-    })();
-    </script>
-    </div><!-- #mainContent -->
-
-    <!-- ====== 密码门 JS ====== -->
-    <script>
-    (function() {
-        const gate    = document.getElementById('pwGate');
-        const main    = document.getElementById('mainContent');
-        const input   = document.getElementById('pwInput');
-        const btn     = document.getElementById('pwBtn');
-        const errorEl = document.getElementById('pwError');
-
-        // 密码校验（自包含哈希，兼容 HTTP/HTTPS）
-        // 修改密码：告诉我要改的密码即可
-        const PASS_CHECK = '¥zmc¤aln¥2.5'; // 实际密码藏在混淆字符串中
-
-        function saltedHash(s) {
-            // 简单但有效的自包含哈希（不依赖 crypto.subtle）
-            let h1 = 0, h2 = 0;
-            for (let i = 0; i < s.length; i++) {
-                const c = s.charCodeAt(i);
-                h1 = ((h1 << 5) - h1 + c) | 0;
-                h2 = ((h2 << 7) - h2 + c * (i + 1)) | 0;
-            }
-            return (h1 >>> 0).toString(16) + ':' + (h2 >>> 0).toString(16);
-        }
-
-        // 错误计数器
-        let failCount = 0;
-        let lockUntil = 0;
-
-        function checkPassword() {
-            const now = Date.now();
-            if (now < lockUntil) {
-                showError('请等待 ' + Math.ceil((lockUntil - now) / 1000) + ' 秒后再试');
-                return;
-            }
-            const val = input.value.trim();
-            if (!val) { showError('请输入密码'); return; }
-
-            // 预计算的哈希值（"zmcaln2.5" 的 saltedHash）
-            const CORRECT = '430ac86:77c02298';
-
-            if (saltedHash(val) === CORRECT) {
-                failCount = 0;
-                gate.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                gate.style.opacity = '0';
-                gate.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    gate.style.display = 'none';
-                    main.style.display = '';
-                    if (window._triggerMusic) window._triggerMusic();
-                }, 600);
-            } else {
-                failCount++;
-                input.value = '';
-                input.classList.add('shake');
-                setTimeout(() => input.classList.remove('shake'), 500);
-                if (failCount >= 5) {
-                    lockUntil = now + 30000;
-                    showError('尝试次数过多，请 30 秒后再试');
-                } else {
-                    showError('密码不对，已尝试 ' + failCount + '/5 次');
-                }
-            }
-        }
-
-        function showError(msg) {
-            errorEl.textContent = msg;
-            errorEl.style.opacity = '1';
-            setTimeout(() => { errorEl.style.opacity = '0'; }, 2000);
-        }
-
-        btn.addEventListener('click', checkPassword);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') checkPassword();
-        });
-
-        // 生成背景星星
-        const starsContainer = document.getElementById('pwStars');
+        // Init embers
         for (let i = 0; i < 40; i++) {
-            const s = document.createElement('div');
-            s.style.cssText = `
-                position:absolute;
-                left:${Math.random()*100}%;top:${Math.random()*100}%;
-                width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;
-                background:white;border-radius:50%;
-                animation:twinklePw ${2+Math.random()*4}s ease-in-out infinite;
-                animation-delay:${Math.random()*4}s;
-                opacity:0.2;
-            `;
-            starsContainer.appendChild(s);
+            const e = createEmber();
+            e.y = Math.random() * emberCanvas.height;
+            e.life = Math.random();
+            embers.push(e);
         }
 
-        // 暴露给主页面触发音乐用
-        window._triggerMusic = function() {
-            const audio = document.getElementById('bgAudio');
-            if (audio) {
-                audio.loop = true;
-                audio.volume = 0.6;
-                audio.play().catch(()=>{});
-            }
-        };
+        setInterval(() => {
+            if (embers.length < 60) embers.push(createEmber());
+        }, 200);
 
-        // 自动聚焦输入框
-        setTimeout(() => input.focus(), 300);
+        function drawEmbers() {
+            ectx.clearRect(0, 0, emberCanvas.width, emberCanvas.height);
+            for (let i = embers.length - 1; i >= 0; i--) {
+                const e = embers[i];
+                e.x += e.vx;
+                e.y += e.vy;
+                e.life -= e.decay;
+                if (e.life <= 0) { embers.splice(i, 1); continue; }
+                const alpha = e.life;
+                const glow = ectx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r * 3);
+                glow.addColorStop(0, `hsla(${e.hue}, 100%, 60%, ${alpha})`);
+                glow.addColorStop(0.5, `hsla(${e.hue}, 100%, 40%, ${alpha * 0.4})`);
+                glow.addColorStop(1, 'transparent');
+                ectx.fillStyle = glow;
+                ectx.beginPath();
+                ectx.arc(e.x, e.y, e.r * 3, 0, Math.PI * 2);
+                ectx.fill();
+            }
+        }
+
+        // === Dragon Canvas (subtle scale pattern + eye glow) ===
+        const dragonCanvas = document.getElementById('dragonCanvas');
+        const dctx = dragonCanvas.getContext('2d');
+        let dragonPhase = 0;
+
+        function resizeDragon() {
+            dragonCanvas.width = window.innerWidth;
+            dragonCanvas.height = window.innerHeight;
+        }
+        resizeDragon();
+        window.addEventListener('resize', resizeDragon);
+
+        function drawDragon() {
+            dctx.clearRect(0, 0, dragonCanvas.width, dragonCanvas.height);
+            const cx = dragonCanvas.width / 2;
+            const cy = dragonCanvas.height * 0.35;
+
+            // Subtle dragon eye glow
+            dragonPhase += 0.02;
+            const pulse = 0.3 + Math.sin(dragonPhase) * 0.15;
+            const glow = dctx.createRadialGradient(cx, cy, 20, cx, cy, 250);
+            glow.addColorStop(0, `rgba(200, 40, 20, ${pulse})`);
+            glow.addColorStop(0.3, `rgba(180, 30, 15, ${pulse * 0.6})`);
+            glow.addColorStop(0.7, 'rgba(80, 10, 5, 0.05)');
+            glow.addColorStop(1, 'transparent');
+            dctx.fillStyle = glow;
+            dctx.fillRect(0, 0, dragonCanvas.width, dragonCanvas.height);
+
+            // Subtle V-shaped dragon scale hints
+            dctx.strokeStyle = 'rgba(180, 120, 60, 0.04)';
+            dctx.lineWidth = 1;
+            const rows = 8;
+            const spacing = dragonCanvas.width / (rows + 1);
+            for (let r = 1; r <= rows; r++) {
+                const x = r * spacing;
+                dctx.beginPath();
+                dctx.moveTo(x, 0);
+                dctx.lineTo(x, dragonCanvas.height);
+                dctx.stroke();
+            }
+        }
+
+        function animate() {
+            drawEmbers();
+            drawDragon();
+            requestAnimationFrame(animate);
+        }
+        animate();
     })();
     </script>
 </body>
